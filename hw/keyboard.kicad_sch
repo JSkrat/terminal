@@ -1,0 +1,16 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid 0675b13b-36a1-4911-b75d-b75f7a4d2d84)
+
+  (paper "A4")
+
+  (lib_symbols
+  )
+
+
+  (text "chord keyboard for 4 fingers with 2 or 3 buttons per finger\nshould output ASCII code"
+    (at 15.875 24.765 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid e9560c42-a782-4982-bbfb-af8fe035ef58)
+  )
+)
