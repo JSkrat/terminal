@@ -137,3 +137,51 @@ void fbSetBitmap(const uint8_t x, const uint8_t y, const uint8_t *pic, const uin
         }
 	}
 }
+
+void fbRect(const uint8_t x, const uint8_t y, const uint8_t size_x, const uint8_t size_y, const eColor fill) {
+	if (cNone == fill) return;
+	if (LCD_HEIGHT <= y) return;
+	if (LCD_WIDTH <= x) return;
+	const int x2 = x + size_x-1;
+	const int y2 = y + size_y-1;
+	const int x_b = x/8;
+	const int x2_b = x2/8;
+	const int offset_left = x % 8;
+	const int offset_right = x2 % 8;
+	for (int y_ = y; y_ < min(y+size_y, LCD_HEIGHT); ++y_) {
+        for (int x_ = x_b; x_ < min(x2_b, LCD_BUFFER_WIDTH); ++x_) {
+            uint8_t mask = 0xFF;
+            if (x_b == x_) {
+                mask = 0xFF >> offset_left;
+            } else if (x2_b == x_) {
+                mask = 0xFF << (8 - offset_right);
+            }
+            const uint8_t color = 0xFF ^ (cSet == fill);
+            if (0xFF == mask) buffer[y_][x_] = color;
+            else {
+                buffer[y_][x_] &= ~mask;
+                buffer[y_][x_] |= color & mask;
+            }
+        }
+    }
+}
+
+void fbBorder(const uint8_t x, const uint8_t y, const uint8_t size_x, const uint8_t size_y, const eColor border, const uint8_t borderSize, const eColor fill) {
+    const bool fillPresent = (size_x > borderSize*2) && (size_y > borderSize*2);
+    if (! fillPresent) {
+        // simpllified edge-case when border fills everything, single rectangle with border color
+        fbRect(x, y, size_x, size_y, border);
+        return;
+    }
+    // there are 5 rectangles to it: top, bottom, left, right and central fill
+    // top
+    fbRect(x, y, size_x, borderSize, border);
+    // bottom
+    fbRect(x, y+size_y-borderSize, size_x, borderSize, border);
+    // left
+    fbRect(x, y+borderSize, borderSize, size_y - borderSize*2, border);
+    // right
+    fbRect(x+size_x-borderSize, y+borderSize, borderSize, size_y - borderSize*2, border);
+    // fill
+    fbRect(x+borderSize, y+borderSize, size_x - borderSize*2, size_y - borderSize*2, fill);
+}
