@@ -4,6 +4,7 @@
 #include "st7920.h"
 
 #define LCD_WIDTH 128
+// condensed size. Highest bit in each byte is left most pixel
 #define LCD_BUFFER_WIDTH (LCD_WIDTH/8)
 #define LCD_HEIGHT 64
 #define max(a,b) \
@@ -107,7 +108,7 @@ void fbSetPixel(const uint8_t x, const uint8_t y, bool value) {
 	if (LCD_HEIGHT <= y) return;
 	if (LCD_WIDTH <= x) return;
 	const int x_buf = x / 8;
-	const int x_rem = x % 8;
+	const int x_rem = 8 - (x % 8);
 	if (value)
 		buffer[y][x_buf] |= 1 << x_rem;
 	else
@@ -119,6 +120,20 @@ void fbSetPixel(const uint8_t x, const uint8_t y, bool value) {
 void fbSetBitmap(const uint8_t x, const uint8_t y, const uint8_t *pic, const uint8_t size_x, const uint8_t size_y) {
 	if (LCD_HEIGHT <= y) return;
 	if (LCD_WIDTH <= x) return;
-	for (int y_ = y; y_ < min(y+size_y, LCD_HEIGHT); ++y_) {
+	int size_x_b = x / 8;
+	const int offset = x % 8;
+	if (0 != offset) size_x_b += 1;
+	for (int y_ = 0; y_ < min(size_y, LCD_HEIGHT - y); ++y_) {
+        for (int x_ = 0; x_ < min(size_x_b, LCD_BUFFER_WIDTH - x/8); ++x_) {
+            const int nextByte = *(pic + x_ + y_*size_x_b);
+            const int leftPart = nextByte << offset;
+            const int leftMask = ~(0xFF << offset);
+            const int rightPart = nextByte >> (8-offset);
+            const int rightMask = ~(0xFF >> (8-offset));
+            #define LEFT_BUF buffer[y + y_][(x/8) + x_]
+            #define RIGHT_BUF buffer[y + y_][(x/8) + x_ + 1]
+            LEFT_BUF &= leftMask; LEFT_BUF |= leftPart;
+            RIGHT_BUF &= rightMask; RIGHT_BUF |= rightPart;
+        }
 	}
 }
